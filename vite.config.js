@@ -1,23 +1,31 @@
 import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 import fs from 'fs';
 import path from 'path';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig(({ mode }) => {
   const isLocal = mode === 'development';
-  const config = {};
+  const httpsConfig = {};
 
   if (isLocal) {
-    try {
-      config.server = {
-        https: {
-          key: fs.readFileSync(path.resolve(__dirname, 'localhost-key.pem')),
-          cert: fs.readFileSync(path.resolve(__dirname, 'localhost-cert.pem')),
-        },
+    const keyPath = path.resolve(__dirname, 'localhost-key.pem');
+    const certPath = path.resolve(__dirname, 'localhost-cert.pem');
+
+    if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+      httpsConfig.https = {
+        key: fs.readFileSync(keyPath),
+        cert: fs.readFileSync(certPath),
       };
-    } catch (err) {
-      console.warn('Certificados HTTPS não encontrados, rodando sem HTTPS.');
+    } else {
+      console.warn('⚠️ Certificados HTTPS não encontrados. Rodando com HTTP.');
     }
   }
 
-  return config;
+  return {
+    plugins: [react(), tailwindcss()],
+    server: {
+      ...httpsConfig,
+    },
+  };
 });
